@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+ "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="guestbookSQL">
+
+	<!-- 방명록 쓰기 -->
+	<insert id="guestbookWrite" parameterType="java.util.Map">
+		insert into guestbook (seq
+		,name
+		,email
+		,homepage
+		,subject
+		,content
+		,logtime)
+
+		values (seq_guestbook.nextval
+		,#{name}
+		,#{email}
+		,#{homepage}
+		,#{subject}
+		,#{content}
+		,sysdate
+		)
+
+
+	</insert>
+
+	<!-- 방명록 목록 -->
+	<select id="getGuestbookList" parameterType="java.util.Map"
+		resultType="guestbook">
+		<!-- <![CDATA[ select * from (select rownum rn, tt.* from (select *from 
+			guestbook)tt )where rn>=#{startNum} and rn<=#{endNum} ]]> -->
+
+
+		<!-- <![CDATA[ select * from (select rownum rn, tt.* from (select seq,name,email,homepage,subject, 
+			content,logtime from guestbook )tt) where rn>=#{startNum} and rn<=#{endNum} 
+			]]> -->
+		
+		
+			<![CDATA[
+		select * from
+		(select rownum rn, tt.* from
+		(select * from guestbook order by seq desc)tt
+		)where rn>=#{startNum} and rn<=#{endNum} 
+		]]>
+
+	</select>
+
+	<!-- 1개의 글보기 -->
+	<select id="getGuestbookView" parameterType="int"
+		resultType="guestbook">
+		select * from guestbook where seq=#{seq}
+	</select>
+
+
+
+	<!-- 총글수 -->
+
+	<select id="getTotalA" resultType="int">
+		select count(*) from guestbook
+	</select>
+
+	<!-- 글삭제 -->
+	<delete id="guestbookDelete" parameterType="int">
+
+		delete guestbook where seq=#{seq}
+
+	</delete>
+
+<!-- 글 수정 -->
+	<update id="guestbookModify" parameterType="java.util.Map">
+		update guestbook set subject=#{subject}
+						,content=#{content}
+						,logtime=sysdate where seq=#{seq}
+	</update>
+
+
+</mapper>

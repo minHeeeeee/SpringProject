@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+ "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="boardSQL">
+	<!-- 글쓰기 -->
+	<insert id="boardWrite" parameterType="java.util.Map">
+		insert into board(seq
+						, id
+						, name
+						, email
+						, subject
+						, content
+						, ref)
+				values(seq_board.nextval
+					, #{id}
+					, #{name} 
+					, #{email}
+					, #{subject}
+					, #{content}
+					, seq_board.currval)
+	</insert>
+	
+	<!-- 목록 -->
+	<select id="getBoardList" parameterType="java.util.Map" resultType="board">
+		<!-- select * from
+		(select rownum rn, tt.* from
+		(select seq,id,name,email,subject,content,
+				ref,lev,step,pseq,reply,hit,"
+		        to_char(logtime, 'yyyy.mm.dd') as logtime from board order by ref desc, step asc)tt)
+		where rn between #{startNum} and #{endNum} -->
+		
+	<!-- 	<![CDATA[
+		select * from
+		(select rownum rn, tt.* from
+		(select seq,id,name,email,subject,content,
+				ref,lev,step,pseq,reply,hit,
+		        to_char(logtime, 'yyyy.mm.dd') as logtime from board order by ref desc, step asc)tt)
+		where rn>=#{startNum} and rn<=#{endNum}
+		]]> -->
+		
+		
+		<![CDATA[
+		select * from
+		(select rownum rn, tt.* from
+		(select *from board order by ref desc, step asc)tt
+		)where rn>=#{startNum} and rn<=#{endNum}
+		]]>
+	</select>
+	
+	<!-- 1개의 글보기 -->
+	<select id="getBoardView" parameterType="int" resultType="board">
+		select * from board where seq=#{seq}
+	</select>
+	
+	<!-- 총글수 -->
+	<select id="getTotalA" resultType="int">
+		select count(*) from board
+	</select>
+	
+	<!-- 검색한총글수 -->
+	<select id="getTotalSearchA" parameterType="java.util.Map" resultType="int">
+		select count(*) from board where ${searchOption} like '%' || #{keyword} || '%'
+	</select>
+	
+	<!-- 답글 -->
+
+	
+	<insert id="boardReply" parameterType="java.util.Map">
+	begin
+			update board set step=step+1 where ref=#{ref} and step>#{step};
+			
+			insert into board values(seq_board.nextval
+								, #{id}
+								, #{name}
+								, #{email}
+								, #{subject}
+								, #{content}
+								, #{ref}      <!-- 원글 ref -->
+								, #{lev}+1    <!-- 원글 lev+1 -->
+								, #{step}+1   <!-- 원글 step+1 -->
+								, #{pseq}     <!-- 원글번호 -->
+								, 0
+								, 0
+			 					, sysdate);
+								
+			update board set reply=reply+1 where seq=#{pseq};
+			
+		end;
+	</insert>
+	
+
+	
+	<!-- 글삭제 -->
+	<delete id="boardDelete" parameterType="int">
+		begin
+			update board set reply=reply-1 where seq=(select pseq from board where seq=#{seq});
+			update board set subject = '[원글이 삭제된 답글]'||subject where pseq=#{seq};
+			delete board where seq=#{seq};
+		end;
+		
+		<!-- 나의 원글 번호를 찾아가서 답글수를 줄여라 -->
+		<!-- 나의 답글을  찾아서 [원글이 삭제된 답글]이라고 적어줘라 -->
+		<!--  나의 글 지우기  -->
+	</delete>
+	
+	<!-- 글수정 -->
+	<update id="boardModify" parameterType="java.util.Map">
+		update board set subject=#{subject}
+						,content=#{content}
+						,logtime=sysdate where seq=#{seq}
+	</update>
+	
+	<!-- 조회수 -->
+	<update id="boardHit" parameterType="int">
+		update board set hit=hit+1 where seq=#{seq}
+	</update>
+	
+	<!-- 검색 -->
+	<select id="getBoardSearchList" parameterType="java.util.Map" resultType="board">
+	
+		<![CDATA[
+		select * from
+		(select rownum rn, tt.* from
+		(select *from board
+		       
+		 where ${searchOption} like '%' || #{keyword} || '%'
+		   
+		         order by ref desc, step asc)tt
+		)where rn>=#{startNum} and rn<=#{endNum}
+		]]>
+	</select>
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
